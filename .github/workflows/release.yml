@@ -80,7 +80,7 @@ jobs:
             ## Usage
 
             ```sh
-            git view-diff                          # working tree changes -> patch-view.html
+            git view-diff                          # working tree changes -> $TMPDIR/git-view-diff.html
             git view-diff --cached                 # any `git diff` args are passed through
             git view-diff main...HEAD -- src
             git view-diff -o review.html --open    # custom output file, then open in browser

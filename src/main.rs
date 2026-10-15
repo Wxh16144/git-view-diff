@@ -12,7 +12,7 @@ Usage:
   <command> | git view-diff [options]
 
 Options:
-  -o, --output <file>  Output file [default: patch-view.html]
+  -o, --output <file>  Output file [default: $TMPDIR/git-view-diff.html]
       --open           Open the output file in the default browser
   -h                   Print help
   -V, --version        Print version
@@ -24,7 +24,10 @@ Other arguments are passed to `git diff`, e.g.:
 ";
 
 fn main() {
-    let mut output = String::from("patch-view.html");
+    let mut output = env::temp_dir()
+        .join("git-view-diff.html")
+        .to_string_lossy()
+        .into_owned();
     let mut open = false;
     let mut diff_args = Vec::new();
 
