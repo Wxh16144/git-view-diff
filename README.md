@@ -38,4 +38,4 @@ GIT_VIEW_DIFF_VIEWER=pulls.review@latest git view-diff   # one-off, overrides gi
 | `pulls.review` | `pulls.review@^0.3` |
 | `pulls.review@<version>` | Any npm version or tag, e.g. `@latest` |
 
-With pulls.review, arguments follow [its CLI](https://github.com/antfu/pulls.review/tree/main/packages/cli) instead of `git diff`. No arguments means `--worktree` (uncommitted changes against `HEAD`, untracked files included). `-o` and stdin input are not supported.
+With pulls.review, arguments follow [its CLI](https://github.com/antfu/pulls.review/tree/main/packages/cli) instead of `git diff`. Without a target, `--worktree` is added: uncommitted changes against `HEAD`, including staged and untracked files (the built-in viewer shows unstaged changes only). `-o` and stdin input are not supported.

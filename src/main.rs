@@ -120,8 +120,17 @@ fn pulls_review_spec() -> Option<String> {
 }
 
 fn run_pulls_review(spec: &str, mut args: Vec<String>) -> ! {
-    if args.is_empty() {
-        args.push("--worktree".into());
+    let mut rest = args.iter();
+    let mut has_target = false;
+    while let Some(arg) = rest.next() {
+        if arg == "--port" {
+            rest.next();
+        } else if !arg.starts_with('-') {
+            has_target = true;
+        }
+    }
+    if !has_target {
+        args.insert(0, "--worktree".into());
     }
     let npx = if cfg!(windows) { "npx.cmd" } else { "npx" };
     let status = Command::new(npx)
