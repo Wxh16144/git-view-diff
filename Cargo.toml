@@ -1,0 +1,9 @@
+[package]
+name = "git-view-diff"
+version = "0.1.0"
+edition = "2021"
+description = "Render git diff as a side-by-side HTML page, powered by PatchViewer"
+
+[profile.release]
+lto = true
+strip = true
