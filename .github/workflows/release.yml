@@ -30,14 +30,12 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          name=git-view-diff-${{ github.ref_name }}-${{ matrix.target }}
-          mkdir "$name"
-          cp target/${{ matrix.target }}/release/git-view-diff* "$name"/
-          rm -f "$name"/*.d "$name"/*.pdb
+          name=git-view-diff-${{ matrix.target }}
+          cd target/${{ matrix.target }}/release
           if [[ "$RUNNER_OS" == Windows ]]; then
-            7z a "$name.zip" "$name"
+            7z a "$GITHUB_WORKSPACE/$name.zip" git-view-diff.exe
           else
-            tar czf "$name.tar.gz" "$name"
+            tar czf "$GITHUB_WORKSPACE/$name.tar.gz" git-view-diff
           fi
 
       - uses: actions/upload-artifact@v4
@@ -63,14 +61,21 @@ jobs:
           body: |
             ## Install
 
-            Download the archive for your platform, extract it, and put `git-view-diff` somewhere on your `PATH`. Git picks it up as the `git view-diff` subcommand.
+            Put `git-view-diff` on your `PATH`, and Git picks it up as the `git view-diff` subcommand.
 
             ```sh
-            # e.g. macOS (Apple Silicon)
-            tar xzf git-view-diff-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz
-            mv git-view-diff-${{ github.ref_name }}-aarch64-apple-darwin/git-view-diff /usr/local/bin/
-            xattr -d com.apple.quarantine /usr/local/bin/git-view-diff  # macOS only, if blocked by Gatekeeper
+            # aarch64-apple-darwin | x86_64-apple-darwin | x86_64-unknown-linux-gnu | aarch64-unknown-linux-gnu
+            TARGET=aarch64-apple-darwin
+            mkdir -p ~/.local/bin   # make sure it is on your PATH
+            curl -fsSL https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/git-view-diff-$TARGET.tar.gz | tar xz -C ~/.local/bin
+            git view-diff -V
             ```
+
+            Windows: extract `git-view-diff.exe` from `git-view-diff-x86_64-pc-windows-msvc.zip` into a directory on your `PATH`.
+
+            > [!NOTE]
+            > On macOS, a binary downloaded **via a browser** is quarantined by Gatekeeper and gets killed (`died of signal 9`) or moved to Trash on first run. Use the `curl` command above, or clear the flag before running it:
+            > `xattr -d com.apple.quarantine ~/.local/bin/git-view-diff`
 
             ## Usage
 
