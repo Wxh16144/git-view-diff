@@ -21,13 +21,13 @@ Other arguments are passed to `git diff`, e.g.:
   git view-diff --cached
   git view-diff main...HEAD -- src
   git show HEAD | git view-diff -o head.html
+
+Set GIT_VIEW_DIFF_VIEWER or `git config view-diff.viewer` to
+`pulls.review[@<version>]` to review with pulls.review (via npx) instead.
 ";
 
 fn main() {
-    let mut output = env::temp_dir()
-        .join("git-view-diff.html")
-        .to_string_lossy()
-        .into_owned();
+    let mut output = None;
     let mut open = false;
     let mut diff_args = Vec::new();
 
@@ -35,7 +35,7 @@ fn main() {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "-o" | "--output" => match args.next() {
-                Some(v) => output = v,
+                Some(v) => output = Some(v),
                 None => fail("missing value for --output"),
             },
             "--open" => open = true,
@@ -54,6 +54,23 @@ fn main() {
             _ => diff_args.push(arg),
         }
     }
+
+    if let Some(spec) = pulls_review_spec() {
+        if output.is_some() {
+            fail("--output is not supported with pulls.review");
+        }
+        if diff_args.is_empty() && !io::stdin().is_terminal() {
+            fail("pulls.review cannot read a diff from stdin");
+        }
+        run_pulls_review(&spec, diff_args);
+    }
+
+    let output = output.unwrap_or_else(|| {
+        env::temp_dir()
+            .join("git-view-diff.html")
+            .to_string_lossy()
+            .into_owned()
+    });
 
     let diff = if diff_args.is_empty() && !io::stdin().is_terminal() {
         let mut buf = Vec::new();
@@ -79,6 +96,40 @@ fn main() {
     if open {
         open_in_browser(&output);
     }
+}
+
+/// `GIT_VIEW_DIFF_VIEWER` overrides `git config view-diff.viewer`; `None` means the built-in PatchViewer.
+fn pulls_review_spec() -> Option<String> {
+    let viewer = env::var("GIT_VIEW_DIFF_VIEWER")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .or_else(|| {
+            let out = Command::new("git")
+                .args(["config", "--get", "view-diff.viewer"])
+                .output()
+                .ok()?;
+            let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            (!v.is_empty()).then_some(v)
+        })?;
+    match viewer.as_str() {
+        "patchviewer" => None,
+        "pulls.review" => Some("pulls.review@^0.3".into()),
+        v if v.starts_with("pulls.review@") => Some(viewer),
+        v => fail(&format!("unknown viewer: {v} (expected patchviewer or pulls.review[@<version>])")),
+    }
+}
+
+fn run_pulls_review(spec: &str, mut args: Vec<String>) -> ! {
+    if args.is_empty() {
+        args.push("--worktree".into());
+    }
+    let npx = if cfg!(windows) { "npx.cmd" } else { "npx" };
+    let status = Command::new(npx)
+        .args(["-y", spec])
+        .args(&args)
+        .status()
+        .unwrap_or_else(|e| fail(&format!("failed to run {npx}: {e}")));
+    exit(status.code().unwrap_or(1))
 }
 
 fn git_diff(args: &[String]) -> Vec<u8> {

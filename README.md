@@ -21,3 +21,21 @@ git view-diff main...HEAD -- src
 git view-diff -o review.html --open    # custom output file, then open in browser
 git show HEAD | git view-diff          # read a diff/patch from stdin
 ```
+
+## Viewer
+
+Besides the built-in PatchViewer, `git view-diff` can hand off to [pulls.review](https://github.com/antfu/pulls.review) (requires Node.js 20+, run via `npx`):
+
+```sh
+git config view-diff.viewer pulls.review            # this repo only
+git config --global view-diff.viewer pulls.review   # all repos
+GIT_VIEW_DIFF_VIEWER=pulls.review@latest git view-diff   # one-off, overrides git config
+```
+
+| Value | Viewer |
+| --- | --- |
+| `patchviewer` (default) | Built-in PatchViewer |
+| `pulls.review` | `pulls.review@^0.3` |
+| `pulls.review@<version>` | Any npm version or tag, e.g. `@latest` |
+
+With pulls.review, arguments follow [its CLI](https://github.com/antfu/pulls.review/tree/main/packages/cli) instead of `git diff`. No arguments means `--worktree` (uncommitted changes against `HEAD`, untracked files included). `-o` and stdin input are not supported.
