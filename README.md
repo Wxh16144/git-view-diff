@@ -22,6 +22,8 @@ git view-diff -o review.html --open    # custom output file, then open in browse
 git show HEAD | git view-diff          # read a diff/patch from stdin
 ```
 
+To open in the browser by default, run `git config --global view-diff.open true`; `--no-open` skips it once.
+
 ## Viewer
 
 Besides the built-in PatchViewer, `git view-diff` can hand off to [pulls.review](https://github.com/antfu/pulls.review) (requires Node.js 20+, run via `npx`):

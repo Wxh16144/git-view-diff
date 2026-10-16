@@ -13,7 +13,8 @@ Usage:
 
 Options:
   -o, --output <file>  Output file [default: $TMPDIR/git-view-diff.html]
-      --open           Open the output file in the default browser
+      --[no-]open      Open the output file in the default browser
+                       [default: `git config view-diff.open`]
   -h                   Print help
   -V, --version        Print version
 
@@ -28,7 +29,7 @@ Set GIT_VIEW_DIFF_VIEWER or `git config view-diff.viewer` to
 
 fn main() {
     let mut output = None;
-    let mut open = false;
+    let mut open = None;
     let mut diff_args = Vec::new();
 
     let mut args = env::args().skip(1);
@@ -38,7 +39,8 @@ fn main() {
                 Some(v) => output = Some(v),
                 None => fail("missing value for --output"),
             },
-            "--open" => open = true,
+            "--open" => open = Some(true),
+            "--no-open" => open = Some(false),
             "-h" | "--help" => {
                 print!("{HELP}");
                 return;
@@ -93,9 +95,16 @@ fn main() {
     }
     println!("{output}");
 
-    if open {
+    if open.unwrap_or_else(open_by_default) {
         open_in_browser(&output);
     }
+}
+
+fn open_by_default() -> bool {
+    Command::new("git")
+        .args(["config", "--type=bool", "--get", "view-diff.open"])
+        .output()
+        .is_ok_and(|out| out.stdout.trim_ascii() == b"true")
 }
 
 /// `GIT_VIEW_DIFF_VIEWER` overrides `git config view-diff.viewer`; `None` means the built-in PatchViewer.
